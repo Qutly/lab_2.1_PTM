@@ -1,0 +1,56 @@
+#include <avr/io.h>
+#include <stdlib.h>
+#include <string.h>
+#include <util/delay.h>
+ 
+#ifndef _BV
+#define _BV(bit)        (1<<(bit))
+#endif
+#ifndef sbi
+#define sbi(reg,bit)    reg |= (_BV(bit))
+#endif
+ 
+#ifndef cbi
+#define cbi(reg,bit)    reg &= ~(_BV(bit))
+#endif
+ 
+#define ENCODER_CLK 1
+#define ENCODER_DT 2
+
+int main() {
+ 
+  DDRD=0x00;
+  int lastClk = HIGH;
+
+  pinMode(ENCODER_CLK, INPUT);
+  pinMode(ENCODER_DT, INPUT);
+
+  byte tab[6] = {PD3, PD4, PD5, PD6, PD7, PB0};
+  int i=0;
+
+  sbi(PORTD, PD3);
+
+  while (1) {
+    int newClk = digitalRead(ENCODER_CLK);
+    if(newClk != lastClk) {
+      lastClk = newClk;
+      int dtValue = digitalRead(ENCODER_DT);
+      //zgodnie z kierunkiem zegara, inkrementacja
+      if(newClk == LOW && dtValue == HIGH) {
+        _delay_ms(100);
+        i==5 ? cbi(PORTB, tab[i]) : cbi(PORTD, tab[i]);
+        i++;
+        if(i>5) i=5;
+        i==5 ? sbi(PORTB, tab[i]) : sbi(PORTD, tab[i]); 
+      }
+      // przeciwnie z kierunkiem zegara, dekrementacja
+      if(newClk == LOW && dtValue == LOW) {
+        _delay_ms(100);
+        i==5 ? cbi(PORTB, tab[i]) : cbi(PORTD, tab[i]);
+        i--;
+        if(i<0) i=0;
+        i==5 ? sbi(PORTB, tab[i]) : sbi(PORTD, tab[i]);
+      }
+    }
+  }
+}
