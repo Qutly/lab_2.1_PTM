@@ -1,0 +1,90 @@
+#include <avr/io.h>
+#include <stdlib.h>
+#include <string.h>
+#include <util/delay.h>
+ 
+#ifndef _BV
+#define _BV(bit)        (1<<(bit))
+#endif
+#ifndef sbi
+#define sbi(reg,bit)    reg |= (_BV(bit))
+#endif
+ 
+#ifndef cbi
+#define cbi(reg,bit)    reg &= ~(_BV(bit))
+#endif
+
+#define LED_PIN_8 8
+#define BUTTON_PIN_1 13
+#define BUTTON_PIN_2 12
+#define BUTTON_START 11
+#define BUTTON_STOP 10
+
+int main() {
+  
+  DDRD = 0xff;
+  
+  byte lastButtonState = LOW;
+  byte ledState = LOW;
+
+  int function_running = 0;
+
+  pinMode(BUTTON_PIN_1, INPUT_PULLUP);
+  pinMode(BUTTON_PIN_2, INPUT_PULLUP);
+  pinMode(BUTTON_START, INPUT_PULLUP);
+  pinMode(BUTTON_STOP, INPUT_PULLUP);
+  
+  pinMode(LED_PIN_8, OUTPUT);
+
+  byte tab[6] = {PD3, PD4, PD5, PD6, PD7, PB0};
+  int i=0;
+  bool go_right = true;
+
+  while (1) {
+    // ------ zadanie 2.1
+    byte buttonStateOne = digitalRead(BUTTON_PIN_1);
+    if(buttonStateOne == HIGH) {
+      cbi(PORTD, PD1);
+      _delay_ms(50);
+    }
+    else if(buttonStateOne == LOW) {
+      sbi(PORTD, PD1);
+      _delay_ms(50);
+    }
+    // ------ zadanie 2.2  
+    byte buttonState = digitalRead(BUTTON_PIN_2);
+    if(buttonState != lastButtonState) {
+      lastButtonState = buttonState;
+      if(buttonState == HIGH) {
+        _delay_ms(100);
+        ledState = (ledState == HIGH) ? LOW : HIGH;
+        digitalWrite(PD2, ledState);
+      }
+    }
+    // ------ zadanie 2.3 i 2.4
+    if(digitalRead(BUTTON_START) == LOW && function_running == 0) {
+      function_running = 1;
+      while(1) {
+        i==5 ? sbi(PORTB, tab[i]) : sbi(PORTD, tab[i]);
+        _delay_ms(500);
+        i==5 ? cbi(PORTB, tab[i]) : cbi(PORTD, tab[i]);
+
+        if(i==5)
+          go_right = false;
+        else if(i==0)
+          go_right = true;
+
+        if(go_right)
+          i++;
+        else
+          i--;
+        if(digitalRead(BUTTON_STOP) == LOW && function_running == 1) {
+          i=0;
+          go_right=true;
+          function_running=0;
+          break;
+        }
+      }
+    }
+  }
+}
