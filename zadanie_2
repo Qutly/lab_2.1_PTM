@@ -14,27 +14,24 @@
 #define cbi(reg,bit)    reg &= ~(_BV(bit))
 #endif
 
-#define LED_PIN_8 8
-#define BUTTON_PIN_1 13
-#define BUTTON_PIN_2 12
-#define BUTTON_START 11
-#define BUTTON_STOP 10
+#define LED_PIN_8 PB0
+#define BUTTON_1 PB5
+#define BUTTON_2 PB4
+#define BUTTON_START PB3
+#define BUTTON_STOP PB2
 
 int main() {
   
   DDRD = 0xff;
+  DDRB |= (1 << LED_PIN_8);
+
+  DDRB &= ~(1<<BUTTON_1)&~(1<<BUTTON_2)&~(1<<BUTTON_START)&~(1<<BUTTON_STOP);
+	PORTB |= (1<<BUTTON_1)|(1<<BUTTON_2)|(1<<BUTTON_START)|(1<<BUTTON_STOP);
   
   byte lastButtonState = LOW;
   byte ledState = LOW;
 
   int function_running = 0;
-
-  pinMode(BUTTON_PIN_1, INPUT_PULLUP);
-  pinMode(BUTTON_PIN_2, INPUT_PULLUP);
-  pinMode(BUTTON_START, INPUT_PULLUP);
-  pinMode(BUTTON_STOP, INPUT_PULLUP);
-  
-  pinMode(LED_PIN_8, OUTPUT);
 
   byte tab[6] = {PD3, PD4, PD5, PD6, PD7, PB0};
   int i=0;
@@ -42,27 +39,24 @@ int main() {
 
   while (1) {
     // ------ zadanie 2.1
-    byte buttonStateOne = digitalRead(BUTTON_PIN_1);
-    if(buttonStateOne == HIGH) {
-      cbi(PORTD, PD1);
-      _delay_ms(50);
-    }
-    else if(buttonStateOne == LOW) {
-      sbi(PORTD, PD1);
-      _delay_ms(50);
-    }
+    if(!(PINB & (1<<BUTTON_1))) sbi(PORTD, PD1);
+    else cbi(PORTD, PD1);
     // ------ zadanie 2.2  
-    byte buttonState = digitalRead(BUTTON_PIN_2);
-    if(buttonState != lastButtonState) {
-      lastButtonState = buttonState;
-      if(buttonState == HIGH) {
-        _delay_ms(100);
+    byte buttonTwoState = (PINB & (1 << BUTTON_2)) ? HIGH : LOW;
+    if (buttonTwoState != lastButtonState) {
+      lastButtonState = buttonTwoState;
+      if (buttonTwoState == HIGH) {
         ledState = (ledState == HIGH) ? LOW : HIGH;
-        digitalWrite(PD2, ledState);
+        if (ledState == HIGH) {
+          sbi(PORTD, PD2);
+        } else {
+          cbi(PORTD, PD2);
+        }
       }
+      _delay_ms(200);
     }
     // ------ zadanie 2.3 i 2.4
-    if(digitalRead(BUTTON_START) == LOW && function_running == 0) {
+    if(!(PINB & (1<<BUTTON_START)) && function_running == 0) {
       function_running = 1;
       while(1) {
         i==5 ? sbi(PORTB, tab[i]) : sbi(PORTD, tab[i]);
@@ -78,7 +72,7 @@ int main() {
           i++;
         else
           i--;
-        if(digitalRead(BUTTON_STOP) == LOW && function_running == 1) {
+        if(!(PINB & (1<<BUTTON_STOP)) && function_running == 1) {
           i=0;
           go_right=true;
           function_running=0;
