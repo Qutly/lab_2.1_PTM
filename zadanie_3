@@ -14,27 +14,29 @@
 #define cbi(reg,bit)    reg &= ~(_BV(bit))
 #endif
  
-#define ENCODER_CLK 1
-#define ENCODER_DT 2
+#define ENCODER_CLK_BIT 1  
+#define ENCODER_DT_BIT 2  
 
 int main() {
  
-  DDRD=0x00;
   int lastClk = HIGH;
 
-  pinMode(ENCODER_CLK, INPUT);
-  pinMode(ENCODER_DT, INPUT);
+  DDRD &= ~(1 << ENCODER_CLK_BIT);
+  PORTD |= (1 << ENCODER_CLK_BIT);
 
+  DDRD &= ~(1 << ENCODER_DT_BIT);
+  PORTD |= (1 << ENCODER_DT_BIT);
+  
   byte tab[6] = {PD3, PD4, PD5, PD6, PD7, PB0};
   int i=0;
 
   sbi(PORTD, PD3);
 
   while (1) {
-    int newClk = digitalRead(ENCODER_CLK);
+    int newClk = (PIND & (1 << ENCODER_CLK_BIT)) ? 1 : 0;
     if(newClk != lastClk) {
       lastClk = newClk;
-      int dtValue = digitalRead(ENCODER_DT);
+      int dtValue = (PIND & (1 << ENCODER_DT_BIT)) ? 1 : 0;
       //zgodnie z kierunkiem zegara, inkrementacja
       if(newClk == LOW && dtValue == HIGH) {
         _delay_ms(100);
