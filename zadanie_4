@@ -1,1 +1,62 @@
+#include <avr/io.h>
+#include <stdlib.h>
+#include <string.h>
+#include <util/delay.h>
+#include <avr/interrupt.h>
+ 
+#ifndef _BV
+#define _BV(bit)        (1<<(bit))
+#endif
+#ifndef sbi
+#define sbi(reg,bit)    reg |= (_BV(bit))
+#endif
+ 
+#ifndef cbi
+#define cbi(reg,bit)    reg &= ~(_BV(bit))
+#endif
 
+#define ENC_A PD2
+#define ENC_B PD3
+
+byte tab[6] = {PD0, PD1, PD4, PD5, PD6, PD7};
+volatile int i=0;
+volatile bool go_right=true;
+
+
+void configInterrupt() {
+  
+  DDRD &= ~(1 << ENC_A);
+  PORTD |= (1 << ENC_A);
+
+  sbi(EICRA,ISC01);
+  sbi(EIMSK,INT0);
+
+  sei(); 
+}
+
+
+ISR(INT0_vect) {
+ if ((bit_is_set(PIND,ENC_B)) == 0) {
+  i--; 
+  go_right = false;  
+ } else {
+  i++; 
+  go_right = true;
+ }
+ if(i>5) i=5; 
+ if(i<0) i=0;
+}
+
+int main() {
+  configInterrupt();
+  while (1) {
+    if(go_right) {
+      cbi(PORTD, tab[i-1]);
+      sbi(PORTD, tab[i]);
+    } else {
+      cbi(PORTD, tab[i+1]);
+      sbi(PORTD, tab[i]);
+    }
+  }
+  return 0;
+}
